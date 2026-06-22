@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="FEW-Repository dataset repository admin panel." />
+  <title>FEW-Repository Dataset Admin</title>
+  <link rel="icon" type="image/png" href="./logos/Logo.png" />
+
+  <!-- Tailwind CSS CDN starts here -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fewBlue: '#003f7a',
+            fewCyan: '#20beff',
+            fewGreen: '#1f9d55'
+          },
+          boxShadow: {
+            soft: '0 12px 30px rgba(15, 23, 42, 0.08)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Page-specific styles start here -->
+  <style>
+    html { scroll-behavior: smooth; }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(32, 190, 255, 0.10), transparent 28rem),
+        linear-gradient(180deg, #f8fafc 0%, #eef4f8 100%);
+    }
+
+    .table-box {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid rgb(226 232 240);
+      border-radius: 1rem;
+    }
+
+    .table-box table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table-box th,
+    .table-box td {
+      border-bottom: 1px solid rgb(241 245 249);
+      padding: 0.65rem 0.8rem;
+      font-size: 0.78rem;
+      vertical-align: top;
+    }
+
+    .table-box th {
+      background: rgb(248 250 252);
+      color: rgb(71 85 105);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .cell-truncate {
+      max-width: 240px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-slate-800">
+  <!-- Main navigation starts here -->
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-sm">
+    <div class="mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <a href="./index.html" class="flex items-center gap-3" aria-label="FEW-Repository public repository">
+        <img
+          src="./logos/Logo.png"
+          onerror="this.onerror=null; this.src='./images/FEWNexus-01-ok.png';"
+          alt="FEW-Repository logo"
+          class="h-10 w-10 rounded-lg object-contain"
+        />
+        <div class="leading-tight">
+          <p class="text-base font-extrabold text-fewBlue">FEW-Repository</p>
+          <p class="hidden text-xs font-medium text-slate-500 sm:block">Dataset Admin Panel</p>
+        </div>
+      </a>
+
+      <nav class="flex items-center gap-2" aria-label="Admin navigation">
+        <a href="./index.html" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-fewBlue hover:bg-blue-50">
+          Public repository
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
+    <!-- Admin hero starts here -->
+    <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft">
+      <div class="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="p-8 sm:p-10">
+          <p class="mb-4 inline-flex rounded-full bg-cyan-50 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.2em] text-fewBlue">
+            Protected admin area
+          </p>
+          <h1 class="max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+            Review submitted FEW-Repository datasets.
+          </h1>
+          <p class="mt-5 max-w-3xl text-base leading-7 text-slate-600">
+            Inspect pending submissions, preview the selected main file, download individual files, approve public datasets, reject submissions, and permanently delete rejected datasets.
+          </p>
+        </div>
+
+        <div class="bg-gradient-to-br from-fewBlue to-blue-900 p-8 text-white sm:p-10">
+          <div class="rounded-3xl bg-white/10 p-5 backdrop-blur">
+            <label for="admin-token" class="mb-2 block text-sm font-black text-blue-100">Admin token</label>
+            <input
+              id="admin-token"
+              type="password"
+              autocomplete="off"
+              placeholder="Paste X-Admin-Token"
+              class="w-full rounded-xl border border-white/20 bg-white/95 px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-fewCyan"
+            />
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button id="save-token-button" type="button" class="rounded-xl bg-white px-4 py-2 text-sm font-black text-fewBlue hover:bg-blue-50">
+                Save token
+              </button>
+              <button id="clear-token-button" type="button" class="rounded-xl border border-white/30 px-4 py-2 text-sm font-black text-white hover:bg-white/10">
+                Clear
+              </button>
+            </div>
+            <p id="token-status" class="mt-3 text-sm font-semibold text-blue-100"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Queue controls start here -->
+    <section class="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-soft">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="text-sm font-bold uppercase tracking-[0.18em] text-fewCyan">Review queues</p>
+          <h2 class="text-2xl font-black text-fewBlue">Datasets</h2>
+          <p id="queue-summary" class="mt-1 text-sm text-slate-500">Choose a queue to load datasets.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-queue="pending" class="queue-button rounded-xl bg-fewBlue px-4 py-2 text-sm font-black text-white hover:bg-blue-900">
+            Pending
+          </button>
+          <button type="button" data-queue="rejected" class="queue-button rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+            Rejected
+          </button>
+          <button type="button" data-queue="all" class="queue-button rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+            All
+          </button>
+          <button id="refresh-button" type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <p id="action-status" class="mt-4 text-sm font-semibold text-slate-500" role="status"></p>
+    </section>
+
+    <!-- Dataset list starts here -->
+    <section class="mt-6">
+      <div id="dataset-list" class="grid grid-cols-1 gap-5"></div>
+
+      <div id="empty-state" class="hidden rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-soft">
+        <h3 class="text-2xl font-black text-slate-900">No datasets in this queue</h3>
+        <p class="mt-2 text-slate-500">Try another queue or refresh the list.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Preview modal starts here -->
+  <div id="preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+    <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-fewCyan">Dataset preview</p>
+          <h2 id="preview-title" class="text-2xl font-black text-fewBlue">Preview</h2>
+          <p id="preview-subtitle" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+        <button id="preview-close-button" type="button" class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100" aria-label="Close preview">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="preview-content" class="max-h-[72vh] overflow-auto p-5"></div>
+    </div>
+  </div>
+
+  <!-- Admin integration script starts here -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const API_BASE_URL = 'https://grounds-price-starts-devel.trycloudflare.com';
+      const TOKEN_STORAGE_KEY = 'few_ai_admin_token';
+      const MAX_PREVIEW_COLUMNS = 10;
+
+      let currentQueue = 'pending';
+      let currentDatasets = [];
+
+      const tokenInput = document.getElementById('admin-token');
+      const saveTokenButton = document.getElementById('save-token-button');
+      const clearTokenButton = document.getElementById('clear-token-button');
+      const tokenStatus = document.getElementById('token-status');
+      const actionStatus = document.getElementById('action-status');
+      const queueSummary = document.getElementById('queue-summary');
+      const datasetList = document.getElementById('dataset-list');
+      const emptyState = document.getElementById('empty-state');
+      const refreshButton = document.getElementById('refresh-button');
+      const queueButtons = Array.from(document.querySelectorAll('.queue-button'));
+
+      const previewModal = document.getElementById('preview-modal');
+      const previewTitle = document.getElementById('preview-title');
+      const previewSubtitle = document.getElementById('preview-subtitle');
+      const previewContent = document.getElementById('preview-content');
+      const previewCloseButton = document.getElementById('preview-close-button');
+
+      const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+      const normalizeText = (value) => String(value || '').toLowerCase().trim();
+
+      const formatNumber = (value) => {
+        if (value === null || value === undefined || value === '') return 'N/A';
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue.toLocaleString('en-US') : escapeHtml(value);
+      };
+
+      const formatSize = (dataset) => {
+        const value = dataset.total_upload_size_mb ?? dataset.size_mb;
+        if (value === null || value === undefined || value === '') return 'N/A';
+        return `${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })} MB`;
+      };
+
+      const formatDate = (value) => {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+          ? 'N/A'
+          : date.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+
+      const getToken = () => tokenInput.value.trim();
+
+      const setStatus = (message, type = 'neutral') => {
+        actionStatus.textContent = message || '';
+        actionStatus.className = 'mt-4 text-sm font-semibold';
+
+        if (type === 'success') actionStatus.classList.add('text-emerald-700');
+        else if (type === 'error') actionStatus.classList.add('text-red-700');
+        else actionStatus.classList.add('text-slate-500');
+      };
+
+      const setTokenStatus = (message) => {
+        tokenStatus.textContent = message || '';
+      };
+
+      const getDatasetInitials = (title) => String(title || 'DS')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((word) => word[0])
+        .join('')
+        .toUpperCase();
+
+      const getMainFile = (dataset) => {
+        if (dataset.main_file) return dataset.main_file;
+
+        if (Array.isArray(dataset.files)) {
+          const mainFile = dataset.files.find((file) => file.role === 'main');
+          if (mainFile) return mainFile;
+        }
+
+        return {
+          index: 0,
+          original_filename: dataset.original_filename || 'dataset',
+          extension: dataset.original_filename ? `.${String(dataset.original_filename).split('.').pop()}` : '',
+          role: 'main',
+          size_mb: dataset.size_mb,
+          download_url: dataset.download_url,
+          admin_download_url: dataset.admin_download_url
+        };
+      };
+
+      const getDatasetFiles = (dataset) => {
+        if (Array.isArray(dataset.files) && dataset.files.length) return dataset.files;
+        return [getMainFile(dataset)];
+      };
+
+      const renderBadge = (status) => {
+        const normalizedStatus = normalizeText(status);
+        let classes = 'bg-slate-100 text-slate-700';
+
+        if (normalizedStatus === 'published') classes = 'bg-emerald-50 text-emerald-700';
+        if (normalizedStatus === 'pending_review') classes = 'bg-amber-50 text-amber-700';
+        if (normalizedStatus === 'rejected') classes = 'bg-red-50 text-red-700';
+
+        return `<span class="inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${classes}">${escapeHtml(status || 'unknown')}</span>`;
+      };
+
+      const renderFileList = (dataset) => {
+        const files = getDatasetFiles(dataset);
+
+        if (!files.length) {
+          return '<p class="text-sm text-slate-500">No files registered.</p>';
+        }
+
+        return `
+          <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50">
+            <div class="border-b border-slate-200 px-4 py-3">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Dataset files</p>
+            </div>
+            <div class="divide-y divide-slate-200">
+              ${files.map((file) => `
+                <div class="grid gap-3 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="break-words text-sm font-black text-slate-800">${escapeHtml(file.original_filename || 'Unnamed file')}</p>
+                      <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">${escapeHtml(file.role || 'supporting')}</span>
+                      <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">${escapeHtml(file.kind || file.extension || 'file')}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                      Index: ${escapeHtml(file.index ?? 0)} · Extension: ${escapeHtml(file.extension || 'N/A')} · Size: ${escapeHtml(file.size_mb ?? 'N/A')} MB
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="download-file-button rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-fewBlue hover:bg-blue-50"
+                    data-id="${escapeHtml(dataset.id)}"
+                    data-index="${escapeHtml(file.index ?? 0)}"
+                    data-filename="${escapeHtml(file.original_filename || 'dataset-file')}"
+                  >
+                    Download file
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      };
+
+      const renderDatasetCard = (dataset) => {
+        const normalizedStatus = normalizeText(dataset.status);
+        const canApprove = normalizedStatus !== 'published';
+        const canReject = normalizedStatus !== 'rejected';
+        const canDelete = normalizedStatus === 'rejected';
+        const mainFile = getMainFile(dataset);
+
+        return `
+          <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-soft">
+            <div class="grid gap-5 lg:grid-cols-[88px_1fr]">
+              <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-fewBlue to-fewCyan text-xl font-black text-white">
+                ${escapeHtml(getDatasetInitials(dataset.title))}
+              </div>
+
+              <div class="min-w-0">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div class="min-w-0">
+                    <div class="mb-2">${renderBadge(dataset.status)}</div>
+                    <h3 class="break-words text-2xl font-black leading-tight text-fewBlue">${escapeHtml(dataset.title || 'Untitled dataset')}</h3>
+                    <p class="mt-1 break-words text-sm text-slate-500">
+                      Main file: <span class="font-semibold">${escapeHtml(mainFile.original_filename || 'N/A')}</span>
+                    </p>
+                    <p class="mt-1 break-words text-sm text-slate-500">
+                      Submitter:
+                      <span class="font-semibold">${escapeHtml(dataset.submitter_username ? '@' + dataset.submitter_username : 'No username')}</span>
+                      ${dataset.submitter_name ? ` · ${escapeHtml(dataset.submitter_name)}` : ''}
+                      ${dataset.submitter_email ? ` · ${escapeHtml(dataset.submitter_email)}` : ''}
+                      ${dataset.auth_provider ? ` · ${escapeHtml(dataset.auth_provider)}` : ''}
+                    </p>
+                  </div>
+                  <p class="break-all rounded-full bg-slate-50 px-3 py-2 font-mono text-xs font-bold text-slate-500">${escapeHtml(dataset.id)}</p>
+                </div>
+
+                <p class="mt-4 line-clamp-3 leading-7 text-slate-600">${escapeHtml(dataset.description || 'No description provided.')}</p>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-fewBlue">${escapeHtml(dataset.task_type || 'Task N/A')}</span>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">${escapeHtml(dataset.data_type || 'Type N/A')}</span>
+                  <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">${escapeHtml(dataset.category || 'Category N/A')}</span>
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">${escapeHtml(dataset.region || 'Region N/A')}</span>
+                </div>
+
+                <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Rows</p>
+                    <p class="mt-1 font-black text-slate-900">${formatNumber(dataset.rows)}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Features</p>
+                    <p class="mt-1 font-black text-slate-900">${formatNumber(dataset.features)}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Files</p>
+                    <p class="mt-1 font-black text-slate-900">${formatNumber(dataset.number_of_files || getDatasetFiles(dataset).length)}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Size</p>
+                    <p class="mt-1 font-black text-slate-900">${formatSize(dataset)}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Created</p>
+                    <p class="mt-1 font-black text-slate-900">${formatDate(dataset.created_at)}</p>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold uppercase text-slate-400">Reviewed</p>
+                    <p class="mt-1 font-black text-slate-900">${formatDate(dataset.reviewed_at)}</p>
+                  </div>
+                </div>
+
+                ${renderFileList(dataset)}
+
+                <div class="mt-5 flex flex-wrap gap-3">
+                  <button type="button" class="preview-button rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" data-id="${escapeHtml(dataset.id)}">
+                    Preview main file
+                  </button>
+                  <button type="button" class="download-main-button rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" data-id="${escapeHtml(dataset.id)}" data-filename="${escapeHtml(mainFile.original_filename || 'dataset')}">
+                    Download main
+                  </button>
+                  <button type="button" class="download-all-button rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-black" data-id="${escapeHtml(dataset.id)}" data-filename="${escapeHtml((dataset.title || 'dataset') + '_all_files.zip')}">
+                    Download all .zip
+                  </button>
+                  <button type="button" class="approve-button rounded-xl bg-fewBlue px-4 py-2 text-sm font-bold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50" data-id="${escapeHtml(dataset.id)}" ${canApprove ? '' : 'disabled'}>
+                    Approve
+                  </button>
+                  <button type="button" class="reject-button rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50" data-id="${escapeHtml(dataset.id)}" ${canReject ? '' : 'disabled'}>
+                    Reject
+                  </button>
+                  ${canDelete ? `
+                    <button type="button" class="delete-rejected-button rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-black" data-id="${escapeHtml(dataset.id)}" data-title="${escapeHtml(dataset.title || 'Untitled dataset')}">
+                      Delete permanently
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      };
+
+      const updateQueueButtons = () => {
+        queueButtons.forEach((button) => {
+          const isActive = button.dataset.queue === currentQueue;
+          button.className = isActive
+            ? 'queue-button rounded-xl bg-fewBlue px-4 py-2 text-sm font-black text-white hover:bg-blue-900'
+            : 'queue-button rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50';
+        });
+      };
+
+      const renderDatasets = () => {
+        updateQueueButtons();
+
+        if (!currentDatasets.length) {
+          datasetList.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          queueSummary.textContent = `No datasets in ${currentQueue} queue.`;
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        datasetList.innerHTML = currentDatasets.map(renderDatasetCard).join('');
+        queueSummary.textContent = `Showing ${currentDatasets.length} dataset(s) in ${currentQueue} queue.`;
+      };
+
+      const adminFetch = async (path, options = {}) => {
+        const token = getToken();
+
+        if (!token) {
+          throw new Error('Missing admin token.');
+        }
+
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            'X-Admin-Token': token
+          }
+        });
+
+        if (!response.ok) {
+          let errorMessage = `Request failed with status ${response.status}`;
+
+          try {
+            const payload = await response.json();
+            errorMessage = payload.detail || errorMessage;
+          } catch (_) {}
+
+          throw new Error(errorMessage);
+        }
+
+        return response;
+      };
+
+      const loadQueue = async (queue = currentQueue) => {
+        currentQueue = queue;
+        updateQueueButtons();
+        setStatus('Loading datasets...');
+
+        try {
+          const response = await adminFetch(`/admin/${queue}`);
+          const payload = await response.json();
+
+          currentDatasets = payload.datasets || [];
+          renderDatasets();
+          setStatus(`Loaded ${currentDatasets.length} dataset(s).`, 'success');
+        } catch (error) {
+          currentDatasets = [];
+          renderDatasets();
+          setStatus(`Could not load queue. ${error.message}`, 'error');
+        }
+      };
+
+      const callAdminAction = async (datasetId, action) => {
+        const actionLabel = action === 'approve' ? 'approve' : 'reject';
+        const confirmed = window.confirm(`Are you sure you want to ${actionLabel} this dataset?`);
+
+        if (!confirmed) return;
+
+        setStatus(`${actionLabel[0].toUpperCase()}${actionLabel.slice(1)}ing dataset...`);
+
+        try {
+          await adminFetch(`/admin/${action}/${encodeURIComponent(datasetId)}`, {
+            method: 'POST'
+          });
+
+          setStatus(`Dataset ${actionLabel}d successfully.`, 'success');
+          await loadQueue(currentQueue);
+        } catch (error) {
+          setStatus(`Could not ${actionLabel} dataset. ${error.message}`, 'error');
+        }
+      };
+
+      const deleteRejectedDataset = async (datasetId, datasetTitle) => {
+        const firstConfirm = window.confirm(`This will permanently delete "${datasetTitle}". Continue?`);
+        if (!firstConfirm) return;
+
+        const secondConfirm = window.confirm('This action deletes files, image, and metadata. It cannot be undone. Are you completely sure?');
+        if (!secondConfirm) return;
+
+        setStatus('Deleting rejected dataset...');
+
+        try {
+          await adminFetch(`/admin/rejected/${encodeURIComponent(datasetId)}`, {
+            method: 'DELETE'
+          });
+
+          setStatus('Rejected dataset deleted permanently.', 'success');
+          await loadQueue(currentQueue);
+        } catch (error) {
+          setStatus(`Could not delete dataset. ${error.message}`, 'error');
+        }
+      };
+
+      const downloadBlob = async (path, filename) => {
+        try {
+          const response = await adminFetch(path);
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          const link = document.createElement('a');
+          link.href = objectUrl;
+          link.download = filename || 'dataset-file';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+
+          URL.revokeObjectURL(objectUrl);
+          setStatus('Download started.', 'success');
+        } catch (error) {
+          setStatus(`Could not download file. ${error.message}`, 'error');
+        }
+      };
+
+      const renderSimpleTable = (columns, rows, dtypes = {}) => {
+        if (!columns.length || !rows.length) {
+          return '<p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No row preview available.</p>';
+        }
+
+        const visibleColumns = columns.slice(0, MAX_PREVIEW_COLUMNS);
+        const hiddenCount = Math.max(columns.length - visibleColumns.length, 0);
+
+        const headers = visibleColumns.map((column) => `
+          <th>
+            ${escapeHtml(column)}
+            <span class="block text-[10px] normal-case tracking-normal text-slate-400">${escapeHtml(dtypes[column] || '')}</span>
+          </th>
+        `).join('');
+
+        const bodyRows = rows.map((row) => `
+          <tr>
+            ${visibleColumns.map((column) => `
+              <td class="cell-truncate text-slate-700" title="${escapeHtml(row[column])}">
+                ${escapeHtml(row[column] ?? 'NULL')}
+              </td>
+            `).join('')}
+          </tr>
+        `).join('');
+
+        const note = hiddenCount > 0
+          ? `<p class="mb-3 rounded-xl bg-blue-50 px-4 py-3 text-xs font-semibold text-fewBlue">Showing ${visibleColumns.length} columns. ${hiddenCount} additional columns are hidden.</p>`
+          : '';
+
+        return `
+          ${note}
+          <div class="table-box max-h-[420px]">
+            <table>
+              <thead><tr>${headers}</tr></thead>
+              <tbody>${bodyRows}</tbody>
+            </table>
+          </div>
+        `;
+      };
+
+      const renderTabularPreview = (preview) => {
+        const rows = preview.sample_rows || [];
+        const columns = preview.columns || Object.keys(rows[0] || {});
+        const dtypes = preview.dtypes || {};
+
+        return renderSimpleTable(columns, rows, dtypes);
+      };
+
+      const renderDatabasePreview = (preview) => {
+        const tables = preview.tables || [];
+        const rowCounts = preview.table_row_counts || {};
+        const schemas = preview.table_schemas || {};
+        const sampleRowsByTable = preview.sample_rows_by_table || {};
+
+        if (!tables.length) {
+          return '<p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No database tables found.</p>';
+        }
+
+        return tables.map((tableName) => {
+          const schema = schemas[tableName] || {};
+          const columns = schema.columns || [];
+          const dtypes = schema.dtypes || {};
+          const rows = sampleRowsByTable[tableName] || [];
+
+          return `
+            <section class="mb-6 rounded-2xl border border-slate-200 p-4">
+              <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 class="text-lg font-black text-fewBlue">${escapeHtml(tableName)}</h3>
+                  <p class="text-sm text-slate-500">${formatNumber(rowCounts[tableName])} rows · ${formatNumber(columns.length)} columns</p>
+                </div>
+                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-fewBlue">SQLite table</span>
+              </div>
+              ${renderSimpleTable(columns, rows, dtypes)}
+            </section>
+          `;
+        }).join('');
+      };
+
+      const renderZipPreview = (preview) => {
+        const analyzedFiles = preview.analyzed_files || [];
+        const dataFiles = preview.data_files || [];
+        const documentationFiles = preview.documentation_files || [];
+
+        const fileLists = `
+          <div class="mb-5 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <h3 class="font-black text-fewBlue">Data files inside ZIP</h3>
+              <ul class="mt-3 max-h-56 overflow-auto text-sm text-slate-700">
+                ${dataFiles.length ? dataFiles.map((file) => `<li class="border-b border-slate-100 py-2">${escapeHtml(file)}</li>`).join('') : '<li class="py-2 text-slate-500">No data files listed.</li>'}
+              </ul>
+            </div>
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <h3 class="font-black text-fewBlue">Documentation files inside ZIP</h3>
+              <ul class="mt-3 max-h-56 overflow-auto text-sm text-slate-700">
+                ${documentationFiles.length ? documentationFiles.map((file) => `<li class="border-b border-slate-100 py-2">${escapeHtml(file)}</li>`).join('') : '<li class="py-2 text-slate-500">No documentation files listed.</li>'}
+              </ul>
+            </div>
+          </div>
+        `;
+
+        const analyzedHtml = analyzedFiles.length
+          ? analyzedFiles.map((file) => `
+              <section class="mb-6 rounded-2xl border border-slate-200 p-4">
+                <div class="mb-4">
+                  <h3 class="text-lg font-black text-fewBlue">${escapeHtml(file.filename)}</h3>
+                  <p class="text-sm text-slate-500">${escapeHtml(file.analysis_type || 'file')} · ${formatNumber(file.rows)} rows · ${formatNumber(file.features)} features</p>
+                </div>
+                ${file.preview?.database_type === 'SQLite' ? renderDatabasePreview(file.preview) : renderTabularPreview(file.preview || {})}
+              </section>
+            `).join('')
+          : '<p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">ZIP validated. No internal preview was generated.</p>';
+
+        return `${fileLists}${analyzedHtml}`;
+      };
+
+      const openPreview = async (datasetId) => {
+        previewTitle.textContent = 'Loading preview...';
+        previewSubtitle.textContent = '';
+        previewContent.innerHTML = '<p class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Loading...</p>';
+        previewModal.classList.remove('hidden');
+        previewModal.classList.add('flex');
+
+        try {
+          const response = await adminFetch(`/admin/datasets/${encodeURIComponent(datasetId)}/preview`);
+          const payload = await response.json();
+
+          const preview = payload.preview || {};
+          previewTitle.textContent = payload.title || 'Dataset preview';
+          previewSubtitle.textContent = `${escapeHtml(payload.analysis_type || 'dataset')} · ${formatNumber(payload.rows)} rows · ${formatNumber(payload.features)} features`;
+
+          if (preview.archive_type === 'ZIP' || Array.isArray(preview.analyzed_files)) {
+            previewContent.innerHTML = renderZipPreview(preview);
+          } else if (preview.database_type === 'SQLite') {
+            previewContent.innerHTML = renderDatabasePreview(preview);
+          } else {
+            previewContent.innerHTML = renderTabularPreview(preview);
+          }
+        } catch (error) {
+          previewTitle.textContent = 'Preview error';
+          previewSubtitle.textContent = '';
+          previewContent.innerHTML = `<p class="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">${escapeHtml(error.message)}</p>`;
+        }
+      };
+
+      const closePreview = () => {
+        previewModal.classList.add('hidden');
+        previewModal.classList.remove('flex');
+      };
+
+      saveTokenButton.addEventListener('click', () => {
+        const token = getToken();
+
+        if (!token) {
+          setTokenStatus('Paste a token first.');
+          return;
+        }
+
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+        setTokenStatus('Token saved locally in this browser.');
+        loadQueue(currentQueue);
+      });
+
+      clearTokenButton.addEventListener('click', () => {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        tokenInput.value = '';
+        setTokenStatus('Token cleared.');
+      });
+
+      queueButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          loadQueue(button.dataset.queue);
+        });
+      });
+
+      refreshButton.addEventListener('click', () => loadQueue(currentQueue));
+
+      datasetList.addEventListener('click', (event) => {
+        const previewButton = event.target.closest('.preview-button');
+        const downloadMainButton = event.target.closest('.download-main-button');
+        const downloadAllButton = event.target.closest('.download-all-button');
+        const downloadFileButton = event.target.closest('.download-file-button');
+        const approveButton = event.target.closest('.approve-button');
+        const rejectButton = event.target.closest('.reject-button');
+        const deleteButton = event.target.closest('.delete-rejected-button');
+
+        if (previewButton) {
+          openPreview(previewButton.dataset.id);
+          return;
+        }
+
+        if (downloadMainButton) {
+          downloadBlob(`/admin/download/${encodeURIComponent(downloadMainButton.dataset.id)}`, downloadMainButton.dataset.filename);
+          return;
+        }
+
+        if (downloadAllButton) {
+          downloadBlob(`/admin/download-all/${encodeURIComponent(downloadAllButton.dataset.id)}`, downloadAllButton.dataset.filename);
+          return;
+        }
+
+        if (downloadFileButton) {
+          downloadBlob(`/admin/files/${encodeURIComponent(downloadFileButton.dataset.id)}/${encodeURIComponent(downloadFileButton.dataset.index)}`, downloadFileButton.dataset.filename);
+          return;
+        }
+
+        if (approveButton) {
+          callAdminAction(approveButton.dataset.id, 'approve');
+          return;
+        }
+
+        if (rejectButton) {
+          callAdminAction(rejectButton.dataset.id, 'reject');
+          return;
+        }
+
+        if (deleteButton) {
+          deleteRejectedDataset(deleteButton.dataset.id, deleteButton.dataset.title);
+        }
+      });
+
+      previewCloseButton.addEventListener('click', closePreview);
+      previewModal.addEventListener('click', (event) => {
+        if (event.target === previewModal) closePreview();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closePreview();
+      });
+
+      const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+      if (savedToken) {
+        tokenInput.value = savedToken;
+        setTokenStatus('Token loaded from this browser.');
+        loadQueue(currentQueue);
+      } else {
+        setTokenStatus('Paste your admin token to load queues.');
+        updateQueueButtons();
+      }
+    });
+  </script>
+</body>
+</html>
