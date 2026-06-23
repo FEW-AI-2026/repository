@@ -286,6 +286,53 @@
         }
       });
 
+      const loadImageWithHeader = async (imgElement, imagePath) => {
+        if (!imgElement || !imagePath) return;
+
+        try {
+          const response = await apiFetch(imagePath);
+
+          if (!response.ok) {
+            throw new Error(`Image request failed: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          imgElement.onload = () => URL.revokeObjectURL(objectUrl);
+          imgElement.src = objectUrl;
+        } catch (error) {
+          imgElement.classList.add('hidden');
+
+          const fallback = imgElement.nextElementSibling;
+          if (fallback) {
+            fallback.classList.remove('hidden');
+          }
+        }
+      };
+
+      const hydrateApiImages = (root = document) => {
+        root.querySelectorAll('img[data-api-image]').forEach((imgElement) => {
+          if (imgElement.dataset.loaded === 'true') return;
+
+          imgElement.dataset.loaded = 'true';
+          loadImageWithHeader(imgElement, imgElement.dataset.apiImage);
+        });
+      };
+
+      const startApiImageHydration = () => {
+        hydrateApiImages();
+
+        const observer = new MutationObserver(() => hydrateApiImages());
+        observer.observe(document.body, { childList: true, subtree: true });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApiImageHydration);
+      } else {
+        startApiImageHydration();
+      }
+
       const MAX_PREVIEW_COLUMNS = 10;
 
       const loadingState = document.getElementById('loading-state');
@@ -320,7 +367,7 @@
 
       const renderImage = (dataset) => {
         const container = document.getElementById('dataset-image-container');
-        const imageUrl = dataset.image_url ? buildApiUrl(dataset.image_url) : '';
+        const imageUrl = dataset.image_url || '';
         const fallback = `<div class="flex h-full w-full items-center justify-center bg-white/10 text-xl font-black text-white">${escapeHtml(getInitials(dataset.title))}</div>`;
 
         if (!imageUrl) {
@@ -329,7 +376,7 @@
         }
 
         container.innerHTML = `
-          <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(dataset.title)} image" class="h-full w-full object-cover" onerror="this.outerHTML='${fallback.replace(/'/g, '&#039;')}'" />
+          <img data-api-image="${escapeHtml(imageUrl)}" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="${escapeHtml(dataset.title)} image" class="h-full w-full object-cover" onerror="this.outerHTML='${fallback.replace(/'/g, '&#039;')}'" />
         `;
       };
 

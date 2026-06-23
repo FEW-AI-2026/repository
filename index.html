@@ -563,6 +563,53 @@
         }
       });
 
+      const loadImageWithHeader = async (imgElement, imagePath) => {
+        if (!imgElement || !imagePath) return;
+
+        try {
+          const response = await apiFetch(imagePath);
+
+          if (!response.ok) {
+            throw new Error(`Image request failed: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          imgElement.onload = () => URL.revokeObjectURL(objectUrl);
+          imgElement.src = objectUrl;
+        } catch (error) {
+          imgElement.classList.add('hidden');
+
+          const fallback = imgElement.nextElementSibling;
+          if (fallback) {
+            fallback.classList.remove('hidden');
+          }
+        }
+      };
+
+      const hydrateApiImages = (root = document) => {
+        root.querySelectorAll('img[data-api-image]').forEach((imgElement) => {
+          if (imgElement.dataset.loaded === 'true') return;
+
+          imgElement.dataset.loaded = 'true';
+          loadImageWithHeader(imgElement, imgElement.dataset.apiImage);
+        });
+      };
+
+      const startApiImageHydration = () => {
+        hydrateApiImages();
+
+        const observer = new MutationObserver(() => hydrateApiImages());
+        observer.observe(document.body, { childList: true, subtree: true });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApiImageHydration);
+      } else {
+        startApiImageHydration();
+      }
+
 
       // Fill these values from your Supabase project settings.
       const SUPABASE_URL = 'https://nwbiigfkxfrnhujsvcrs.supabase.co';
@@ -654,7 +701,7 @@
         title: dataset.title || 'Untitled dataset',
         author: dataset.submitter_username ? `@${dataset.submitter_username}` : 'FEW-Repository Community',
         description: dataset.description || 'No description provided.',
-        image: dataset.image_url ? buildApiUrl(dataset.image_url) : '',
+        image: dataset.image_url || '',
         tasks: toArrayValue(dataset.task_type),
         types: toArrayValue(dataset.data_type),
         categories: toArrayValue(dataset.category),
@@ -706,7 +753,7 @@
 
         return `
           <div class="relative ${sizeClass}">
-            <img src="${escapeHtml(dataset.image)}" alt="${escapeHtml(dataset.title)} thumbnail" class="${sizeClass} rounded-2xl object-cover ring-1 ring-slate-200" loading="lazy" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');" />
+            <img data-api-image="${escapeHtml(dataset.image)}" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="${escapeHtml(dataset.title)} thumbnail" class="${sizeClass} rounded-2xl object-cover ring-1 ring-slate-200" loading="lazy" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');" />
             <div class="hidden ${sizeClass} items-center justify-center rounded-2xl bg-gradient-to-br from-fewBlue to-fewCyan text-sm font-black text-white ring-1 ring-slate-200">${escapeHtml(getDatasetInitials(dataset.title))}</div>
           </div>
         `;
