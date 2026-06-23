@@ -555,6 +555,14 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Local backend. Replace this with your public tunnel/domain when deploying.
       const API_BASE_URL = 'https://visor-endeared-safely.ngrok-free.dev';
+      const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          ...(options.headers || {})
+        }
+      });
+
 
       // Fill these values from your Supabase project settings.
       const SUPABASE_URL = 'https://nwbiigfkxfrnhujsvcrs.supabase.co';
@@ -775,7 +783,7 @@
       const loadDatasets = async () => {
         datasetGrid.innerHTML = `<div class="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-soft 2xl:col-span-2"><p class="text-lg font-black text-fewBlue">Loading datasets...</p><p class="mt-2 text-sm text-slate-500">Connecting to ${escapeHtml(API_BASE_URL)}</p></div>`;
         try {
-          const response = await fetch(`${API_BASE_URL}/datasets`);
+          const response = await apiFetch(`/datasets`);
           if (!response.ok) throw new Error(`Backend responded with status ${response.status}`);
           const payload = await response.json();
           datasets = (payload.datasets || []).map(transformBackendDataset);
@@ -846,7 +854,7 @@
         previewModal.classList.remove('hidden');
         previewModal.classList.add('flex');
         try {
-          const response = await fetch(`${API_BASE_URL}/datasets/${encodeURIComponent(datasetId)}/preview`);
+          const response = await apiFetch(`/datasets/${encodeURIComponent(datasetId)}/preview`);
           if (!response.ok) throw new Error(`Backend responded with status ${response.status}`);
           const payload = await response.json();
           previewTitle.textContent = payload.title || dataset?.title || 'Dataset preview';
@@ -974,7 +982,7 @@
         try {
           if (!currentSession?.access_token) throw new Error('Please sign in before submitting a dataset.');
           if (!currentProfile?.has_username) throw new Error('Please choose and save a username before submitting a dataset.');
-          const response = await fetch(`${API_BASE_URL}/submit-dataset`, {
+          const response = await apiFetch(`/submit-dataset`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${currentSession.access_token}` },
             body: buildSubmissionFormData()
@@ -1012,7 +1020,7 @@
           return null;
         }
 
-        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        const response = await apiFetch(`/auth/me`, {
           headers: { Authorization: `Bearer ${currentSession.access_token}` }
         });
 
@@ -1122,7 +1130,7 @@
           formData.append('display_name', displayName);
           formData.append('email_is_public', emailIsPublic ? 'true' : 'false');
 
-          const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+          const response = await apiFetch(`/auth/profile`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${currentSession.access_token}` },
             body: formData

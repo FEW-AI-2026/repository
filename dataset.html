@@ -278,6 +278,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const API_BASE_URL = 'https://visor-endeared-safely.ngrok-free.dev';
+      const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          ...(options.headers || {})
+        }
+      });
+
       const MAX_PREVIEW_COLUMNS = 10;
 
       const loadingState = document.getElementById('loading-state');
@@ -458,13 +466,13 @@
         }
 
         try {
-          const datasetResponse = await fetch(`${API_BASE_URL}/datasets/${encodeURIComponent(datasetId)}`);
+          const datasetResponse = await apiFetch(`/datasets/${encodeURIComponent(datasetId)}`);
           if (!datasetResponse.ok) throw new Error(`Dataset request failed with status ${datasetResponse.status}`);
           const dataset = await datasetResponse.json();
 
           let preview = null;
           try {
-            const previewResponse = await fetch(`${API_BASE_URL}/datasets/${encodeURIComponent(datasetId)}/preview`);
+            const previewResponse = await apiFetch(`/datasets/${encodeURIComponent(datasetId)}/preview`);
             if (previewResponse.ok) {
               const previewPayload = await previewResponse.json();
               preview = previewPayload.preview;

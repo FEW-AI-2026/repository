@@ -204,6 +204,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const API_BASE_URL = 'https://visor-endeared-safely.ngrok-free.dev';
+      const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          ...(options.headers || {})
+        }
+      });
+
       const TOKEN_STORAGE_KEY = 'few_ai_admin_token';
       const MAX_PREVIEW_COLUMNS = 10;
 
@@ -485,7 +493,7 @@
           throw new Error('Missing admin token.');
         }
 
-        const response = await fetch(`${API_BASE_URL}${path}`, {
+        const response = await apiFetch(`${path}`, {
           ...options,
           headers: {
             ...(options.headers || {}),
