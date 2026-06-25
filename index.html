@@ -822,6 +822,7 @@
         const filteredDatasets = sortDatasets(filterDatasets());
         const hasResults = filteredDatasets.length > 0;
         datasetGrid.innerHTML = filteredDatasets.map(renderDatasetCard).join('');
+        hydrateApiImages(datasetGrid);
         datasetGrid.classList.toggle('hidden', !hasResults);
         emptyState.classList.toggle('hidden', hasResults);
         resultsSummary.textContent = hasResults ? `Showing ${filteredDatasets.length} of ${datasets.length} datasets.` : 'No datasets match the current filters.';
