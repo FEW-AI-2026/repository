@@ -94,7 +94,6 @@
         <!-- Desktop navigation links start here -->
         <nav class="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
           <a href="#datasets" class="rounded-full px-4 py-2 text-sm font-semibold text-fewBlue hover:bg-blue-50">Datasets</a>
-          <a href="#popular" class="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Popular</a>
           <a href="#new" class="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">New</a>
           <a href="#contribute" class="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Contribute</a>
           <a href="#about" class="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">About</a>
@@ -320,15 +319,8 @@
         </section>
 
         <!-- Highlight sections start here -->
-        <section class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <!-- Popular datasets section starts here -->
-          <div id="popular" class="rounded-3xl border border-slate-200 bg-white shadow-soft">
-            <div class="flex items-center justify-between border-b border-slate-200 p-5">
-              <h2 class="text-2xl font-black text-fewBlue">Popular Datasets</h2>
-              <a href="#datasets" class="text-sm font-bold text-fewBlue hover:underline">See all</a>
-            </div>
-            <div id="popular-list" class="divide-y divide-slate-100"></div>
-          </div>
+        <section class="mt-8 grid grid-cols-1 gap-6">
+
 
           <!-- New datasets section starts here -->
           <div id="new" class="rounded-3xl border border-slate-200 bg-white shadow-soft">
@@ -351,7 +343,6 @@
             </div>
             <div class="flex flex-col gap-3 sm:flex-row">
               <select id="sort-select" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none focus:border-fewCyan focus:ring-2 focus:ring-fewCyan/20">
-                <option value="popular">Sort by popularity</option>
                 <option value="newest">Sort by newest</option>
                 <option value="title">Sort by title</option>
                 <option value="size">Sort by size</option>
@@ -555,13 +546,19 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Local backend. Replace this with your public tunnel/domain when deploying.
       const API_BASE_URL = 'https://visor-endeared-safely.ngrok-free.dev';
-      const apiFetch = (path, options = {}) => fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          ...(options.headers || {})
-        }
-      });
+      const apiFetch = (path, options = {}) => {
+        const url = path?.startsWith('http')
+          ? path
+          : `${API_BASE_URL}${path?.startsWith('/') ? path : `/${path || ''}`}`;
+
+        return fetch(url, {
+          ...options,
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            ...(options.headers || {})
+          }
+        });
+      };
 
       const loadImageWithHeader = async (imgElement, imagePath) => {
         if (!imgElement || !imagePath) return;
@@ -629,7 +626,6 @@
       const mobileSearch = document.getElementById('mobile-search');
       const sortSelect = document.getElementById('sort-select');
       const datasetGrid = document.getElementById('dataset-grid');
-      const popularList = document.getElementById('popular-list');
       const newList = document.getElementById('new-list');
       const emptyState = document.getElementById('empty-state');
       const resultsSummary = document.getElementById('results-summary');
@@ -739,7 +735,6 @@
         const sorted = [...datasetList];
         const sortValue = sortSelect.value;
         if (sortValue === 'newest') sorted.sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0));
-        if (sortValue === 'popular') sorted.sort((a, b) => (b.sizeMb || 0) - (a.sizeMb || 0));
         if (sortValue === 'title') sorted.sort((a, b) => a.title.localeCompare(b.title));
         if (sortValue === 'size') sorted.sort((a, b) => b.sizeMb - a.sizeMb);
         return sorted;
@@ -812,16 +807,22 @@
         </article>`;
 
       const renderHighlights = () => {
-        const popularDatasets = [...datasets].sort((a, b) => b.sizeMb - a.sizeMb).slice(0, 4);
-        const newDatasets = [...datasets].sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0)).slice(0, 4);
-        popularList.innerHTML = popularDatasets.length ? popularDatasets.map(renderCompactDataset).join('') : '<p class="p-5 text-sm text-slate-500">No published datasets yet.</p>';
-        newList.innerHTML = newDatasets.length ? newDatasets.map(renderCompactDataset).join('') : '<p class="p-5 text-sm text-slate-500">No published datasets yet.</p>';
+        const newDatasets = [...datasets]
+          .sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0))
+          .slice(0, 4);
+
+        newList.innerHTML = newDatasets.length
+          ? newDatasets.map(renderCompactDataset).join('')
+          : '<p class="p-5 text-sm text-slate-500">No published datasets yet.</p>';
+
+        hydrateApiImages(newList);
       };
 
       const renderCatalog = () => {
         const filteredDatasets = sortDatasets(filterDatasets());
         const hasResults = filteredDatasets.length > 0;
         datasetGrid.innerHTML = filteredDatasets.map(renderDatasetCard).join('');
+        hydrateApiImages(datasetGrid);
         datasetGrid.classList.toggle('hidden', !hasResults);
         emptyState.classList.toggle('hidden', hasResults);
         resultsSummary.textContent = hasResults ? `Showing ${filteredDatasets.length} of ${datasets.length} datasets.` : 'No datasets match the current filters.';
@@ -1230,3 +1231,4 @@
   </script>
 </body>
 </html>
+
